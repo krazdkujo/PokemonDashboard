@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150">
+  <rect width="150" height="150" fill="#f3f4f6"/>
+  <circle cx="75" cy="75" r="50" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
+  <circle cx="75" cy="75" r="20" fill="#f3f4f6" stroke="#9ca3af" stroke-width="2"/>
+  <line x1="25" y1="75" x2="125" y2="75" stroke="#9ca3af" stroke-width="2"/>
+  <text x="75" y="130" text-anchor="middle" fill="#6b7280" font-family="sans-serif" font-size="12">No Image</text>
+</svg>

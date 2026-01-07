@@ -1,0 +1,189 @@
+openapi: 3.0.3
+info:
+  title: Trainer Lookup Dashboard API
+  description: |
+    Internal API for the Trainer Lookup Dashboard. This API proxies requests
+    to the external Pokemon Selector API while keeping the API key secure
+    on the server side.
+  version: 1.0.0
+  contact:
+    name: Pokemon Dashboard Team
+
+servers:
+  - url: /api
+    description: Next.js API routes (relative to application root)
+
+paths:
+  /lookup:
+    get:
+      operationId: lookupTrainer
+      summary: Look up trainer by name
+      description: |
+        Retrieves trainer information and their selected Pokemon (if any)
+        by querying the external Pokemon Selector API. The API key is stored
+        server-side and never exposed to the client.
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: Trainer name to look up (case-insensitive)
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+            example: "Ash"
+      responses:
+        '200':
+          description: Trainer found successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LookupSuccessResponse'
+              examples:
+                withPokemon:
+                  summary: Trainer with Pokemon
+                  value:
+                    success: true
+                    data:
+                      trainer_id: "550e8400-e29b-41d4-a716-446655440000"
+                      trainer_name: "Ash"
+                      pokemon:
+                        uuid: "7f3b8c2a-1234-5678-9abc-def012345678"
+                        number: 25
+                        name: "Pikachu"
+                        types: ["Electric"]
+                withoutPokemon:
+                  summary: Trainer without Pokemon
+                  value:
+                    success: true
+                    data:
+                      trainer_id: "550e8400-e29b-41d4-a716-446655440001"
+                      trainer_name: "Gary"
+                      pokemon: null
+        '400':
+          description: Invalid or missing trainer name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LookupErrorResponse'
+              example:
+                success: false
+                error:
+                  type: "validation"
+                  message: "Enter a name to search"
+        '404':
+          description: Trainer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LookupErrorResponse'
+              example:
+                success: false
+                error:
+                  type: "not_found"
+                  message: "No trainer found with that name. Check your spelling or register at Pokemon Selector."
+        '500':
+          description: Server or network error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LookupErrorResponse'
+              example:
+                success: false
+                error:
+                  type: "network"
+                  message: "Unable to connect. Please try again."
+
+components:
+  schemas:
+    Pokemon:
+      type: object
+      required:
+        - uuid
+        - number
+        - name
+        - types
+      properties:
+        uuid:
+          type: string
+          format: uuid
+          description: Unique instance ID for this Pokemon
+          example: "7f3b8c2a-1234-5678-9abc-def012345678"
+        number:
+          type: integer
+          minimum: 1
+          maximum: 151
+          description: National Pokedex number
+          example: 25
+        name:
+          type: string
+          description: Pokemon species name
+          example: "Pikachu"
+        types:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 2
+          description: List of Pokemon types
+          example: ["Electric"]
+
+    TrainerData:
+      type: object
+      required:
+        - trainer_id
+        - trainer_name
+        - pokemon
+      properties:
+        trainer_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the trainer
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        trainer_name:
+          type: string
+          description: Display name of the trainer
+          example: "Ash"
+        pokemon:
+          oneOf:
+            - $ref: '#/components/schemas/Pokemon'
+            - type: 'null'
+          description: Selected starter Pokemon, or null if none selected
+
+    LookupSuccessResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          $ref: '#/components/schemas/TrainerData'
+
+    LookupErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          required:
+            - type
+            - message
+          properties:
+            type:
+              type: string
+              enum:
+                - not_found
+                - validation
+                - network
+              description: Error category for UI handling
+            message:
+              type: string
+              description: User-friendly error message
