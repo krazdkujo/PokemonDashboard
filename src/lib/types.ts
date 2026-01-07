@@ -6,6 +6,7 @@ export interface Pokemon {
   number: number;
   name: string;
   types: string[];
+  nickname?: string | null;
 }
 
 /**
